@@ -8,6 +8,8 @@ SVG elements cropping using subjx and svg.js.
 
 ClipPath rectangle should have same size and position as image (or shape) subjx rectangle handler in order to manipulate the clip.
 
+HTML scheme is as follows:
+
 ```html
 <body>
   <div id="app">
@@ -39,6 +41,8 @@ ClipPath rectangle should have same size and position as image (or shape) subjx 
   </div>
 </body>
 ```
+
+Open project and run `yarn` and then `yarn dev`.
 
 ## 🌍 Languages
 
