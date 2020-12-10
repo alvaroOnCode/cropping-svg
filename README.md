@@ -6,6 +6,8 @@ SVG elements cropping using subjx and svg.js.
 
 ## ⚙️ How To
 
+ClipPath rectangle should have same size and position as image (or shape) subjx rectangle handler in order to manipulate the clip.
+
 ```html
 <body>
   <div id="app">
@@ -23,13 +25,13 @@ SVG elements cropping using subjx and svg.js.
         <rect id="image-rect-handler" width="512" height="512" fill="none" stroke="#ed1450" stroke-width="4px" class="sjx-drag" />
       </g>
 
-      <!-- Shape -->
+      <!-- or Shape
       <g id="content-shape">
         <g style="clip-path:url('#clippath')">
           <path>...</path>
         </g>
         <rect id="shape-rect-handler" width="512" height="512" fill="none" stroke="#ed1450" stroke-width="4px" class="sjx-drag" />
-      </g>
+      </g> -->
 
       <!-- subjx elements -->
       <g class="sjx-svg-wrapper">...</g>
