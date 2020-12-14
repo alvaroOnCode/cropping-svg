@@ -1,143 +1,362 @@
-<template></template>
+<template>
+  <div id="app-container">
+    <!-- Debug -->
+    <div class="debugPanel">
+      <div class="debugPanel_topBar">
+        <span :class="{ active: active }" @click="active = !active"></span>
+
+        <button :class="{ 'crop-mode': mode === 'Crop' }" @click="switchMode">
+          {{ mode }}
+        </button>
+      </div>
+
+      <div class="debugPanel_logs" :class="{ active: active }">
+        <p v-for="(p, i) in outputHTML" :key="i" v-html="p"></p>
+      </div>
+    </div>
+  </div>
+</template>
 
 <script>
-// Packages
-import subjx from 'subjx';
-import 'subjx/dist/style/subjx.css';
+// Constants
+const IMAGE_SQUARE = {
+  url:
+    "https://image.freepik.com/foto-gratis/close-up-persona-poniendo-setas-frasco-vidrio_23-2148738068.jpg",
+  w: 626,
+  h: 626,
+};
+const IMAGE_RECT = {
+  url:
+    "https://image.freepik.com/free-photo/it-specialist-checking-code-computer-dark-office-night_1098-18699.jpg",
+  w: 626,
+  h: 417,
+};
 
-import SVG from 'svg.js';
+// Packages
+import subjx from "subjx";
+import "subjx/dist/style/subjx.css";
+
+import SVG from "svg.js";
 
 // Utils
-import { dog } from './utils/elements';
-import { calcImageSize, checkLimits } from './utils/helpers'
+import { dog } from "./utils/elements";
+import { getExpandedSize, getLimits, getCropExpandAxis } from "./utils/helpers";
 
 export default {
-  name: 'App',
+  name: "App",
 
   data: () => ({
-    image: null,
+    // DebugPanel
+    active: false,
+    outputHTML: [],
+    mode: "Pre-crop",
+
+    // Crop
+    initSquareSize: 128,
+    target: null,
     rectHandler: null,
     cpRect: null,
     xElem: null,
     modifiers: [],
-    selectedModifier: null
+    selectedModifier: {},
   }),
 
   created() {
-    this.svg = SVG('app').size(1280, 720);
+    this.svg = SVG("app").size(720, 512);
   },
-  
+
   mounted() {
-    // Set image
-    this.image = this.svg.group();
-    this.image.node.innerHTML = dog;
-    
-    // Set rect handler
-    this.rectHandler = this.svg.rect(512, 512);
-    this.rectHandler.attr({
-      fill: 'none',
-      stroke:"#ed1450",
-      "stroke-width":"4px"
-    });
-    
-    // Set clip path
+    // Debug Panel
+    this.separator();
+    this.outputHTML.unshift("Debug...");
+
+    // Set clip path and its subjx-mirror rectangle
     const clippath = this.svg.clip();
-    clippath.rect(512, 512);
-    this.cpRect = clippath.select('rect');
+    clippath.rect(IMAGE_SQUARE.w * 0.5, IMAGE_SQUARE.h * 0.5);
+    this.cpRect = clippath.select("rect").members[0];
     this.cpRect.attr({
-      fill: 'white'
+      fill: "white",
     });
-    
-    // Set image clip path
-    this.image.style('clip-path', `url(#${clippath.id()})`);
+
+    // Set image
+    const image = this.svg.image(
+      IMAGE_SQUARE.url,
+      IMAGE_SQUARE.w * 0.5,
+      IMAGE_SQUARE.h * 0.5
+    );
+
+    // Set shape
+    // const shape = this.svg.group();
+    // shape.node.innerHTML = dog;
+
+    // Set subjx rectangle handler
+    this.rectHandler = this.svg.rect(IMAGE_SQUARE.w * 0.5, IMAGE_SQUARE.h * 0.5);
+    this.rectHandler.attr({
+      fill: "none",
+      stroke: "#ed1450",
+      "stroke-width": "4px",
+    });
+
+    // Set a content group
+    const group = this.svg.group();
 
     // Init subjx
-    const imageHandler = this.imageHandler;
+    const targetHandler = this.targetHandler;
     const mirror = this.mirror;
     const svg = this.svg;
 
-    subjx(this.rectHandler.node).drag({
-      onMove() {
+    this.xElem = subjx(this.rectHandler.node).drag({
+      onMove({ clientX, clientY, dx, dy, transform }) {
         // fires on moving
-        imageHandler();
-        mirror('onMove');
+        targetHandler("onMove", { clientX, clientY, dx, dy, transform });
+        mirror("onMove");
       },
-      onResize() {
+      onResize({ clientX, clientY, dx, dy, width, height }) {
         // fires on resizing
-        imageHandler();
-        mirror('onResize');
+        targetHandler("onResize", { clientX, clientY, dx, dy, width, height });
+        mirror("onResize");
       },
-      onDrop() {
+      onDrop({ clientX, clientY }) {
         // fires on drop
-        imageHandler();
-        mirror('onDrop');
+        targetHandler("onDrop", { clientX, clientY });
+        mirror("onDrop");
       },
     });
 
     // Get subjx modifier nodes and add events to know which one is used
-    this.modifiers = Array.from(document.querySelector('.sjx-svg-wrapper .sjx-svg-handles').childNodes);
+    this.modifiers = Array.from(
+      document.querySelector(".sjx-svg-wrapper .sjx-svg-handles").childNodes
+    );
 
     this.modifiers.forEach((m) => {
-      m.addEventListener('mousedown', this.setSelectedModifier);
-      m.addEventListener('mouseup', this.setSelectedModifier);
+      m.addEventListener("mousedown", this.setSelectedModifier);
+      m.addEventListener("mouseup", this.setSelectedModifier);
     });
+
+    // Set target
+    this.target = image;
+    // this.target = shape;
+    this.target.attr({
+      style: `clip-path: url(#${clippath.id()}); pointer-events: none;`,
+    });
+
+    // Add nodes to group
+    group.add(this.target);
+    group.add(this.rectHandler);
+
+    // Debug
+    // console.log("target:", this.target);
+    // console.log("rectHandler:", this.rectHandler);
+    // console.log("cpRect:", this.cpRect);
+    // console.log("modifiers:", this.modifiers);
   },
 
   methods: {
-    imageHandler() {
-      const limits = checkLimits(this.image.node, this.rectHandler.node);
+    /**
+     * Debug
+     */
+    entry(val) {
+      this.outputHTML.unshift(val);
+    },
+    separator() {
+      this.outputHTML.unshift("- - - - -");
+    },
 
-      // Crop
-      if (this.selectedModifier.mode === 'crop') {
-        // Expand image
-        let dir;
+    /**
+     * Target
+     */
+    // Crop and Resize
+    targetHandler(event, options) {
+      const limits = getLimits(this.target.node, this.rectHandler.node);
 
-        if (
-          (this.selectedModifier.name === 'tc' && limits.toTop) ||
-          (this.selectedModifier.name === 'bc' && limits.toBottom)
-        ) {
-          dir = 'v';
+      if (["onResize", "onDrop"].includes(event)) {
+        // this.entry(
+        //   `${event} | ${this.selectedModifier.mode} | ${this.selectedModifier.name} | dx: ${options.dx} | dy: ${options.dy} | width: ${options.width} | height: ${options.height}`
+        // );
+
+        // Get axis to move target when crop gets limits
+        const axis = getCropExpandAxis(this.selectedModifier.name, limits);
+
+        // Expand target if its visible area is smaller than subjx handler
+        if (this.selectedModifier.mode === "crop") {
+          this.expandTargetOnCrop(axis);
         }
 
-        if (
-          (this.selectedModifier.name === 'ml' && limits.toLeft) ||
-          (this.selectedModifier.name === 'mr' && limits.toRight)
-        ) {
-          dir = 'h';
+        // Event onResize (crop or resize)
+        if (event === "onResize") {
+          // Crop
+          if (this.selectedModifier.mode === "crop") {
+            // Move target only to keep it inside subjx handler
+            if (axis) {
+              this.moveTarget(options, limits);
+            }
+          }
+
+          // Resize
+          if (this.selectedModifier.mode === "resize") {
+            // Fix scales < 0
+            const { a, d, e, f } = this.rectHandler.transform();
+
+            this.target.transform({
+              a,
+              d,
+              e,
+              f,
+            });
+          }
         }
 
-        if (dir) {
-          const size = calcImageSize(this.image, this.rectHandler, dir);
-          this.image.size(size.w, size.h);
+        // Event onDrop
+        if (["onDrop"].includes(event)) {
+          // Scale target and reset matrix
+          if (this.selectedModifier.mode === "resize") {
+            const { a, d, e, f } = this.target.transform();
+
+            this.target.transform({
+              a: 1,
+              d: 1,
+              e: 0,
+              f: 0,
+            });
+
+            this.target.size(this.target.width() * a, this.target.height().d);
+          }
+
+          // Relocate target on finish
+          if (limits.toLeft || limits.toRight) {
+            this.target.attr({
+              x: this.rectHandler.attr().x,
+            });
+          }
+
+          if (limits.toTop || limits.toBottom) {
+            this.target.attr({
+              y: this.rectHandler.attr().y,
+            });
+          }
+
+          // Set attributes for dragging delta
+          this.target.attr({ "data-x": this.target.attr().x });
+          this.target.attr({ "data-y": this.target.attr().y });
+
+          // Reset info object on finish
+          this.selectedModifier = {};
         }
+      }
+
+      // Event onMove
+      if (["onMove"].includes(event)) {
+        // Drag target
+        this.target.move(
+          (this.target.attr("data-x") || 0) + options.dx,
+          (this.target.attr("data-y") || 0) + options.dy
+        );
       }
     },
 
-    mirror(event) {
-      this.cpRect.size(this.rectHandler.width(), this.rectHandler.height());
+    // Move
+    moveTarget(options, limits) {
+      const hasDistortion =
+        this.target.attr("data-distort-x") ||
+        this.target.attr("data-distort-y");
 
-      if (['onMove', 'onDrop'].includes(event)) {
+      if (hasDistortion) {
+        this.moveDistortedTarget();
+      } else {
+        this.moveRawTarget(options, limits);
+      }
+    },
+
+    moveRawTarget(options, limits) {
+      // Top
+      if (this.selectedModifier.name === "tc" && limits.toTop) {
+        this.entry("Top!");
+
+        this.target.y((this.rectHandler.y() || 0) - options.dy);
+      }
+
+      // Left
+      if (this.selectedModifier.name === "ml" && limits.toLeft) {
+        this.entry("Left!");
+
+        this.target.x((this.rectHandler.x() || 0) - options.dx);
+      }
+    },
+
+    moveDistortedTarget() {
+      // TODO
+    },
+
+    // Expand
+    expandTargetOnCrop(axis) {
+      const hasDistortion =
+        this.target.attr("data-distort-x") ||
+        this.target.attr("data-distort-y");
+
+      if (hasDistortion) {
+        this.expandDistortedTargetOnCrop();
+      } else {
+        this.expandRawTargetOnCrop(axis);
+      }
+    },
+
+    expandDistortedTargetOnCrop() {
+      // Fix: Not working
+      const { a, d, e, f } = this.rectHandler.transform();
+
+      this.target.transform({
+        a: this.target.attr("data-distort-x") * a,
+        d: this.target.attr("data-distort-y") * d,
+      });
+    },
+
+    expandRawTargetOnCrop(axis) {
+      const { w, h } = getExpandedSize(this.target, this.rectHandler, axis);
+      this.target.size(w, h);
+    },
+
+    /**
+     * ClipPath
+     */
+    mirror(event) {
+      if (["onResize", "onDrop"].includes(event)) {
+        this.cpRect.size(this.rectHandler.width(), this.rectHandler.height());
+      }
+
+      if (event === "onResize") {
+        this.cpRect.attr({
+          transform: this.rectHandler.attr().transform,
+        });
+      }
+
+      if (["onMove"].includes(event)) {
+        this.cpRect.attr({
+          transform: this.rectHandler.attr().transform,
+        });
+      }
+
+      if (["onDrop"].includes(event)) {
         this.cpRect.attr({
           transform: this.rectHandler.attr().transform,
           x: this.rectHandler.attr().x,
           y: this.rectHandler.attr().y,
         });
       }
-
-      if (event === 'onResize') {
-        this.cpRect.attr({
-          transform: this.rectHandler.attr().transform
-        });
-      }
     },
 
+    /**
+     * Object manager
+     */
     setSelectedModifier(e) {
-      if (e.type === 'mousedown') {
-        const name = e.target.classList.length > 1
-          ? e.target.classList[1]
-          : e.target.classList[0].split('sjx-svg-hdl-')[1];
+      if (e.type === "mousedown") {
+        const name =
+          e.target.classList.length > 1
+            ? e.target.classList[1]
+            : e.target.classList[0].split("sjx-svg-hdl-")[1];
 
-        const mode = ['tc', 'bc', 'ml', 'mr'].includes(name) ? 'crop' : 'resize';
+        const mode = ["tc", "bc", "ml", "mr"].includes(name)
+          ? "crop"
+          : "resize";
 
         const modifier = {
           mode,
@@ -146,18 +365,111 @@ export default {
         };
 
         this.selectedModifier = modifier;
-
-        console.log("selectedModifier:", this.selectedModifier);
-      } else {
-        this.selectedModifier = {};
       }
-    }
-  }
-}
+    },
+
+    switchMode() {
+      this.mode = this.mode !== "Crop" ? "Crop" : "Pre-crop";
+    },
+  },
+};
 </script>
 
 <style lang="scss">
 svg {
   border: 2px solid #0af;
+  left: 50%;
+  padding: 1rem;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+div#app-container {
+  div.debugPanel {
+    background-color: rgba(0, 0, 0, 0.65);
+    border-radius: 0.35rem;
+    box-shadow: 0 4px 1rem rgba(0, 0, 0, 0.35);
+    color: greenyellow;
+    height: 15vh;
+    left: 50%;
+    margin-top: 1rem;
+    min-height: 128px;
+    min-width: 640px;
+    padding: 0 0.5rem;
+    position: absolute;
+    text-align: initial;
+    top: 0;
+    transform: translateX(-50%);
+    width: 35vw;
+    z-index: 30;
+
+    & .debugPanel_topBar {
+      height: 2rem;
+      width: 100%;
+      position: relative;
+
+      & span {
+        background-color: red;
+        border-radius: 50%;
+        cursor: pointer;
+        height: 0.6rem;
+        left: 0.5rem;
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        transition: all 200ms;
+        width: 0.6rem;
+
+        &:hover {
+          box-shadow: 0 0 0.25rem red;
+        }
+
+        &.active {
+          background-color: greenyellow;
+
+          &:hover {
+            box-shadow: 0 0 0.35rem greenyellow;
+          }
+        }
+      }
+
+      & button {
+        background-color: cyan;
+        border: none;
+        border-radius: 16px;
+        color: rgba(0, 0, 0, 0.85);
+        cursor: pointer;
+        font-size: 0.65rem;
+        font-weight: bold;
+        left: 1.8rem;
+        outline: none;
+        padding: 0.25rem 0.65rem;
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+
+        &.crop-mode {
+          background-color: yellowgreen;
+        }
+      }
+    }
+
+    & .debugPanel_logs {
+      height: calc(100% - 2.5rem);
+      padding: 0 0.5rem;
+      pointer-events: none;
+      overflow-y: auto;
+
+      &.active {
+        pointer-events: initial;
+      }
+
+      & p {
+        font-size: 0.85rem;
+        margin-bottom: 0.35rem;
+      }
+    }
+  }
 }
 </style>

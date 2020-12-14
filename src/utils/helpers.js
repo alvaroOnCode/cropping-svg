@@ -1,35 +1,67 @@
-export const calcImageSize = (img, rectHandler, dir) => {
-  const ratio = img.width() / img.height();
+export const getCropExpandAxis = (modifier, limits) => {
+    let axis;
 
-  let width;
-  let height;
+    if (
+        (modifier === 'ml' && limits.toLeft) ||
+        (modifier === 'mr' && limits.toRight)
+    ) {
+        axis = 'x';
+    }
 
-  if (!dir || dir === 'h') {
-    const w = rectHandler.width() * rectHandler.transform().scaleX;
-    width = w > img.width() ? w : img.width();
+    if (
+        (modifier === 'tc' && limits.toTop) ||
+        (modifier === 'bc' && limits.toBottom)
+    ) {
+        axis = 'y';
+    }
 
-    height = width / ratio;
-  } else if (dir === 'v') {
-    const h = rectHandler.height() * rectHandler.transform().scaleY;
-    height = h > img.height() ? h : img.height();
-
-    width = height * ratio;
-  }
-
-  return {
-    w: width,
-    h: height,
-  };
+    return axis;
 };
 
-export const checkLimits = (border, inner) => {
-  const borderBCR = border.getBoundingClientRect();
-  const innerBCR = inner.getBoundingClientRect();
+export const getExpandedSize = (target, rectHandler, dir) => {
+    const { offsetRight, offsetBottom } = getOffsets(target.node, rectHandler.node);
+    const offsetX = offsetRight > 0 ? offsetRight : 0;
+    const offsetY = offsetBottom > 0 ? offsetBottom : 0;
 
-  return {
-    toTop: innerBCR.y <= borderBCR.y,
-    toRight: innerBCR.x + innerBCR.width >= borderBCR.x + borderBCR.width,
-    toBottom: innerBCR.y + innerBCR.height >= borderBCR.y + borderBCR.height,
-    toLeft: innerBCR.x <= borderBCR.x,
-  };
+    const ratio = target.width() / target.height();
+
+    let width;
+    let height;
+
+    if (!dir || dir === 'x') {
+        const w = target.node.getBoundingClientRect().width + offsetX;
+        height = w / ratio;
+    } else if (dir === 'y') {
+        const h = target.node.getBoundingClientRect().height + offsetY;
+        width = h * ratio;
+    }
+
+    return {
+        w: width,
+        h: height,
+    };
+};
+
+export const getLimits = (target, rectHandler) => {
+    const targetBCR = target.getBoundingClientRect();
+    const rectHandlerBCR = rectHandler.getBoundingClientRect();
+
+    return {
+        toTop: rectHandlerBCR.y < targetBCR.y,
+        toRight: rectHandlerBCR.x + rectHandlerBCR.width > targetBCR.x + targetBCR.width,
+        toBottom: rectHandlerBCR.y + rectHandlerBCR.height > targetBCR.y + targetBCR.height,
+        toLeft: rectHandlerBCR.x < targetBCR.x,
+    };
+};
+
+export const getOffsets = (target, rectHandler) => {
+    const targetBCR = target.getBoundingClientRect();
+    const rectHandlerBCR = rectHandler.getBoundingClientRect();
+
+    return {
+        offsetTop: rectHandlerBCR.top - targetBCR.top, // Inside when positive value
+        offsetRight: rectHandlerBCR.right - targetBCR.right, // Inside when positive value
+        offsetBottom: rectHandlerBCR.bottom - targetBCR.bottom, // Inside when negative value
+        offsetLeft: rectHandlerBCR.left - targetBCR.left, // Inside when negative values
+    };
 };

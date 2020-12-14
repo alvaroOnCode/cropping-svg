@@ -59,4 +59,4 @@ Open project and run `yarn` and then `yarn dev`.
 
 ## Credits
 
-Dog shape used in this lab repo is from Freepik.
+Dog and food picture by [Freepik](https://www.freepik.es/)
