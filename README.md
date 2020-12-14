@@ -23,15 +23,29 @@ HTML scheme is as follows:
 
       <!-- Image -->
       <g id="content-image">
+        <!-- Target -->
         <image id="image" width="512" height="512" href="..." style="clip-path:url('#clippath')"></image>
+
+        <!-- Ghost (Only in crop mode) -->
+        <image id="ghost" width="512" height="512" href="..." opacity="0.5"></image>
+
+        <!-- Handler -->
         <rect id="image-rect-handler" width="512" height="512" fill="none" stroke="#ed1450" stroke-width="4px" class="sjx-drag" />
       </g>
 
       <!-- or Shape
       <g id="content-shape">
+        <!-- Target -->
         <g style="clip-path:url('#clippath')">
           <path>...</path>
         </g>
+
+        <!-- Ghost (Only in crop mode) -->
+        <g opacity="0.5">
+          <path>...</path>
+        </g>
+
+        <!-- Handler -->
         <rect id="shape-rect-handler" width="512" height="512" fill="none" stroke="#ed1450" stroke-width="4px" class="sjx-drag" />
       </g> -->
 
