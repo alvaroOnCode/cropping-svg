@@ -40,7 +40,7 @@ import SVG from "svg.js";
 
 // Utils
 import { dog } from "./utils/elements";
-import { getExpandedSize, getLimits, getCropExpandAxis } from "./utils/helpers";
+import { getExpandedSize, getLimits, getCropExpandAxis } from "./utils/crop-helpers";
 
 export default {
   name: "App",
@@ -53,7 +53,7 @@ export default {
 
     // Crop
     initSquareSize: 128,
-    target: null,
+    target: [],
     rectHandler: null,
     cpRect: null,
     xElem: null,
@@ -62,6 +62,7 @@ export default {
   }),
 
   created() {
+    // Init svg.js
     this.svg = SVG("app").size(720, 512);
   },
 
@@ -90,7 +91,10 @@ export default {
     // shape.node.innerHTML = dog;
 
     // Set subjx rectangle handler
-    this.rectHandler = this.svg.rect(IMAGE_SQUARE.w * 0.5, IMAGE_SQUARE.h * 0.5);
+    this.rectHandler = this.svg.rect(
+      IMAGE_SQUARE.w * 0.5,
+      IMAGE_SQUARE.h * 0.5
+    );
     this.rectHandler.attr({
       fill: "none",
       stroke: "#ed1450",
@@ -133,22 +137,17 @@ export default {
       m.addEventListener("mouseup", this.setSelectedModifier);
     });
 
-    // Set target
-    this.target = image;
-    // this.target = shape;
-    this.target.attr({
+    // Set ClipPath to image
+    image.attr({
       style: `clip-path: url(#${clippath.id()}); pointer-events: none;`,
     });
 
     // Add nodes to group
-    group.add(this.target);
+    group.add(image);
     group.add(this.rectHandler);
 
-    // Debug
-    // console.log("target:", this.target);
-    // console.log("rectHandler:", this.rectHandler);
-    // console.log("cpRect:", this.cpRect);
-    // console.log("modifiers:", this.modifiers);
+    // Set target array
+    this.target.push(image);
   },
 
   methods: {
@@ -167,98 +166,105 @@ export default {
      */
     // Crop and Resize
     targetHandler(event, options) {
-      const limits = getLimits(this.target.node, this.rectHandler.node);
+      const limits = getLimits(this.target[0].node, this.rectHandler.node);
 
-      if (["onResize", "onDrop"].includes(event)) {
-        // this.entry(
-        //   `${event} | ${this.selectedModifier.mode} | ${this.selectedModifier.name} | dx: ${options.dx} | dy: ${options.dy} | width: ${options.width} | height: ${options.height}`
-        // );
+      this.target.forEach((target) => {
+        if (["onResize", "onDrop"].includes(event)) {
+          // this.entry(
+          //   `${event} | ${this.selectedModifier.mode} | ${this.selectedModifier.name} | dx: ${options.dx} | dy: ${options.dy} | width: ${options.width} | height: ${options.height}`
+          // );
 
-        // Get axis to move target when crop gets limits
-        const axis = getCropExpandAxis(this.selectedModifier.name, limits);
+          // Get axis to move target when crop gets limits
+          const axis = getCropExpandAxis(this.selectedModifier.name, limits);
 
-        // Expand target if its visible area is smaller than subjx handler
-        if (this.selectedModifier.mode === "crop") {
-          this.expandTargetOnCrop(axis);
-        }
+          // Expand target if its visible area is smaller than subjx handler
+          if (this.selectedModifier.mode === "edge") {
+            this.expandTargetOnCrop(axis);
+          }
 
-        // Event onResize (crop or resize)
-        if (event === "onResize") {
-          // Crop
-          if (this.selectedModifier.mode === "crop") {
-            // Move target only to keep it inside subjx handler
-            if (axis) {
-              this.moveTarget(options, limits);
+          // Event onResize (crop or resize)
+          if (event === "onResize") {
+            // Crop
+            if (this.selectedModifier.mode === "edge") {
+              // Move target only to keep it inside subjx handler
+              if (axis && this.mode !== "Crop") {
+                this.moveTarget(options, limits);
+              }
+            }
+
+            // Resize
+            if (this.selectedModifier.mode === "vertex") {
+              // ⚠️ Fix scales < 0
+              const { a, d, e, f } = this.rectHandler.transform();
+
+              target.transform({
+                a,
+                d,
+                e,
+                f,
+              });
             }
           }
 
-          // Resize
-          if (this.selectedModifier.mode === "resize") {
-            // Fix scales < 0
-            const { a, d, e, f } = this.rectHandler.transform();
+          // Event onDrop
+          if (["onDrop"].includes(event)) {
+            if (this.selectedModifier.mode === "vertex") {
+              const { a, d, e, f } = target.transform();
 
-            this.target.transform({
-              a,
-              d,
-              e,
-              f,
-            });
+              // Reset matrix
+              target.transform({
+                a: 1,
+                d: 1,
+                e: 0,
+                f: 0,
+              });
+
+              // Scale target
+              target.size(target.width() * a, target.height().d);
+            }
+
+            if (this.mode !== "Crop") {
+              // Relocate target on finish
+              if (limits.toLeft || limits.toRight) {
+                target.attr({
+                  x: this.rectHandler.attr().x,
+                });
+              }
+
+              if (limits.toTop || limits.toBottom) {
+                target.attr({
+                  y: this.rectHandler.attr().y,
+                });
+              }
+            }
+
+            // Set attributes for dragging delta
+            target.attr({ "data-x": target.attr().x });
+            target.attr({ "data-y": target.attr().y });
+
+            // Reset info object on finish
+            this.selectedModifier = {};
           }
         }
 
-        // Event onDrop
-        if (["onDrop"].includes(event)) {
-          // Scale target and reset matrix
-          if (this.selectedModifier.mode === "resize") {
-            const { a, d, e, f } = this.target.transform();
-
-            this.target.transform({
-              a: 1,
-              d: 1,
-              e: 0,
-              f: 0,
-            });
-
-            this.target.size(this.target.width() * a, this.target.height().d);
+        // Event onMove
+        if (["onMove"].includes(event)) {
+          if (this.mode !== "Crop") {
+            // Drag target
+            target.move(
+              (target.attr("data-x") || 0) + options.dx,
+              (target.attr("data-y") || 0) + options.dy
+            );
           }
-
-          // Relocate target on finish
-          if (limits.toLeft || limits.toRight) {
-            this.target.attr({
-              x: this.rectHandler.attr().x,
-            });
-          }
-
-          if (limits.toTop || limits.toBottom) {
-            this.target.attr({
-              y: this.rectHandler.attr().y,
-            });
-          }
-
-          // Set attributes for dragging delta
-          this.target.attr({ "data-x": this.target.attr().x });
-          this.target.attr({ "data-y": this.target.attr().y });
-
-          // Reset info object on finish
-          this.selectedModifier = {};
         }
-      }
-
-      // Event onMove
-      if (["onMove"].includes(event)) {
-        // Drag target
-        this.target.move(
-          (this.target.attr("data-x") || 0) + options.dx,
-          (this.target.attr("data-y") || 0) + options.dy
-        );
-      }
+      });
     },
 
     // Move
     moveTarget(options, limits) {
       const hasDistortion =
-        this.target.attr("data-distort-x") ||
-        this.target.attr("data-distort-y");
+        this.target[0].attr("data-distort-x") ||
+        this.target[0].attr("data-distort-y");
 
       if (hasDistortion) {
         this.moveDistortedTarget();
@@ -268,30 +274,28 @@ export default {
     },
 
     moveRawTarget(options, limits) {
-      // Top
-      if (this.selectedModifier.name === "tc" && limits.toTop) {
-        this.entry("Top!");
+      this.target.forEach((target) => {
+        // Top
+        if (this.selectedModifier.name === "tc" && limits.toTop) {
+          target.y((this.rectHandler.y() || 0) - options.dy);
+        }
 
-        this.target.y((this.rectHandler.y() || 0) - options.dy);
-      }
-
-      // Left
-      if (this.selectedModifier.name === "ml" && limits.toLeft) {
-        this.entry("Left!");
-
-        this.target.x((this.rectHandler.x() || 0) - options.dx);
-      }
+        // Left
+        if (this.selectedModifier.name === "ml" && limits.toLeft) {
+          target.x((this.rectHandler.x() || 0) - options.dx);
+        }
+      });
     },
 
     moveDistortedTarget() {
-      // TODO
+      // ⚠️ TODO
     },
 
     // Expand
     expandTargetOnCrop(axis) {
       const hasDistortion =
-        this.target.attr("data-distort-x") ||
-        this.target.attr("data-distort-y");
+        this.target[0].attr("data-distort-x") ||
+        this.target[0].attr("data-distort-y");
 
       if (hasDistortion) {
         this.expandDistortedTargetOnCrop();
@@ -301,18 +305,22 @@ export default {
     },
 
     expandDistortedTargetOnCrop() {
-      // Fix: Not working
+      // ⚠️ Fix
       const { a, d, e, f } = this.rectHandler.transform();
 
-      this.target.transform({
-        a: this.target.attr("data-distort-x") * a,
-        d: this.target.attr("data-distort-y") * d,
+      this.target.forEach((target) => {
+        target.transform({
+          a: target.attr("data-distort-x") * a,
+          d: target.attr("data-distort-y") * d,
+        });
       });
     },
 
     expandRawTargetOnCrop(axis) {
-      const { w, h } = getExpandedSize(this.target, this.rectHandler, axis);
-      this.target.size(w, h);
+      this.target.forEach((target) => {
+        const { w, h } = getExpandedSize(target, this.rectHandler, axis);
+        target.size(w, h);
+      });
     },
 
     /**
@@ -345,6 +353,37 @@ export default {
     },
 
     /**
+     * Ghost image
+     */
+    initGhostImage() {
+      const ghost = this.target[0].clone();
+      ghost.opacity(0.5);
+      ghost.attr({
+        style: "pointer-events: none;",
+      });
+
+      this.target.push(ghost);
+
+      // ⚠️ Fix: subjx fails for some reason
+      subjx(ghost.node).drag({
+        onMove({ clientX, clientY, dx, dy, transform }) {
+          // fires on moving
+        },
+        onResize({ clientX, clientY, dx, dy, width, height }) {
+          // fires on resizing
+        },
+        onDrop({ clientX, clientY }) {
+          // fires on drop
+        },
+      });
+    },
+
+    endGhostImage() {
+      this.target[1].remove();
+      this.target.pop();
+    },
+
+    /**
      * Object manager
      */
     setSelectedModifier(e) {
@@ -355,8 +394,8 @@ export default {
             : e.target.classList[0].split("sjx-svg-hdl-")[1];
 
         const mode = ["tc", "bc", "ml", "mr"].includes(name)
-          ? "crop"
-          : "resize";
+          ? "edge"
+          : "vertex";
 
         const modifier = {
           mode,
@@ -370,6 +409,12 @@ export default {
 
     switchMode() {
       this.mode = this.mode !== "Crop" ? "Crop" : "Pre-crop";
+
+      if (this.mode === "Crop") {
+        this.initGhostImage();
+      } else {
+        this.endGhostImage();
+      }
     },
   },
 };
