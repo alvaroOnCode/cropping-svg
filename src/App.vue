@@ -25,11 +25,27 @@ const IMAGE_SQUARE = {
   w: 626,
   h: 626,
 };
+
 const IMAGE_RECT = {
   url:
     "https://image.freepik.com/free-photo/it-specialist-checking-code-computer-dark-office-night_1098-18699.jpg",
   w: 626,
   h: 417,
+};
+
+const data = {
+  width: "92.08903633404721",
+  height: "80.98663762677951",
+  "data-cropw": "143.29385691159916",
+  "data-croph": "126.01812469561821",
+  "data-cropx": "20.733379364013672",
+  "data-cropy": "0.29055595397950634",
+  "data-crop-axis-x": "1.5560360127106736",
+  "data-crop-axis-x": "1.5560360127106736",
+  "data-rawurl":
+    "https://editor.freepiklabs.com/api/image/serve?url=https%3A%2F%2Fimage002.freepik.com%2F85CDD5AAE329130D3B26ADC0B5AA2108%2Ffree-photo%2Fblonde-young-woman-holding-flowers-hand-shielding-her-eyes-from-sunlight_23-2148066820.jpg",
+  "data-imagecropx": "0",
+  "data-imagecropy": "0",
 };
 
 // Packages
@@ -69,12 +85,11 @@ export default {
 
   created() {
     // Init svg.js
-    this.svg = SVG("app").size(720, 512);
+    this.svg = SVG("app").size(960, 720);
   },
 
   mounted() {
     // Debug Panel
-    this.separator();
     this.outputHTML.unshift("Debug...");
 
     // Set clip path and its subjx-mirror rectangle
@@ -121,19 +136,19 @@ export default {
         y: 1,
       },
 
-      onMove({ clientX, clientY, dx, dy, transform }) {
+      onMove({ dx, dy }) {
         // fires on moving
-        targetHandler("onMove", { clientX, clientY, dx, dy, transform });
+        targetHandler("onMove", { dx, dy });
         mirror("onMove");
       },
-      onResize({ clientX, clientY, dx, dy, width, height }) {
+      onResize({ dx, dy }) {
         // fires on resizing
-        targetHandler("onResize", { clientX, clientY, dx, dy, width, height });
+        targetHandler("onResize", { dx, dy });
         mirror("onResize");
       },
-      onDrop({ clientX, clientY }) {
+      onDrop() {
         // fires on drop
-        targetHandler("onDrop", { clientX, clientY });
+        targetHandler("onDrop");
         mirror("onDrop");
       },
     });
@@ -167,9 +182,6 @@ export default {
      */
     entry(val) {
       this.outputHTML.unshift(val);
-    },
-    separator() {
-      this.outputHTML.unshift("- - - - -");
     },
 
     /**
