@@ -17,36 +17,36 @@ HTML scheme is as follows:
       <!-- Defs -->
       <defs>
         <clipPath id="clippath">
-          <rect id="clippath-rect" width="512" height="512" fill="white" />
+          <rect id="clippath-rect" width="w1" height="h1" fill="white" />
         </clipPath>
       </defs>
 
       <!-- Image -->
       <g id="content-image">
         <!-- Target -->
-        <image id="image" width="512" height="512" href="..." style="clip-path:url('#clippath')"></image>
+        <image id="image" width="w2" height="h2" href="..." style="clip-path:url('#clippath')"></image>
 
         <!-- Ghost (Only in crop mode) -->
-        <image id="ghost" width="512" height="512" href="..." opacity="0.5"></image>
+        <image id="image-ghost" width="w2" height="h2" href="..." opacity="0.5"></image>
 
         <!-- Handler -->
-        <rect id="image-rect-handler" width="512" height="512" fill="none" stroke="#ed1450" stroke-width="4px" class="sjx-drag" />
+        <rect id="image-rect-handler" width="w1" height="h1" fill="none" stroke="#ed1450" stroke-width="4px" class="sjx-drag" />
       </g>
 
       <!-- or Shape
       <g id="content-shape">
         <!-- Target -->
-        <g style="clip-path:url('#clippath')">
+        <g id="shape" style="clip-path:url('#clippath')">
           <path>...</path>
         </g>
 
         <!-- Ghost (Only in crop mode) -->
-        <g opacity="0.5">
+        <g id="shape-ghost" opacity="0.5">
           <path>...</path>
         </g>
 
         <!-- Handler -->
-        <rect id="shape-rect-handler" width="512" height="512" fill="none" stroke="#ed1450" stroke-width="4px" class="sjx-drag" />
+        <rect id="shape-rect-handler" width="w3" height="h3" fill="none" stroke="#ed1450" stroke-width="4px" class="sjx-drag" />
       </g> -->
 
       <!-- subjx elements -->
