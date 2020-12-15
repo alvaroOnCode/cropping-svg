@@ -33,7 +33,7 @@ HTML scheme is as follows:
         <rect id="image-rect-handler" width="w1" height="h1" fill="none" stroke="#ed1450" stroke-width="4px" class="sjx-drag" />
       </g>
 
-      <!-- or Shape
+      <!-- or Shape -->
       <g id="content-shape">
         <!-- Target -->
         <g id="shape" style="clip-path:url('#clippath')">
@@ -47,7 +47,7 @@ HTML scheme is as follows:
 
         <!-- Handler -->
         <rect id="shape-rect-handler" width="w3" height="h3" fill="none" stroke="#ed1450" stroke-width="4px" class="sjx-drag" />
-      </g> -->
+      </g>
 
       <!-- subjx elements -->
       <g class="sjx-svg-wrapper">...</g>
