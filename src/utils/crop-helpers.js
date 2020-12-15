@@ -18,7 +18,7 @@ export const getCropExpandAxis = (modifier, limits) => {
     return axis;
 };
 
-export const getExpandedSize = (target, rectHandler, dir) => {
+export const getExpandedSize = (target, rectHandler, axis) => {
     const { offsetRight, offsetBottom } = getOffsets(target.node, rectHandler.node);
     const offsetX = offsetRight > 0 ? offsetRight : 0;
     const offsetY = offsetBottom > 0 ? offsetBottom : 0;
@@ -28,10 +28,10 @@ export const getExpandedSize = (target, rectHandler, dir) => {
     let width;
     let height;
 
-    if (!dir || dir === 'x') {
+    if (!axis || axis === 'x') {
         const w = target.node.getBoundingClientRect().width + offsetX;
         height = w / ratio;
-    } else if (dir === 'y') {
+    } else if (axis === 'y') {
         const h = target.node.getBoundingClientRect().height + offsetY;
         width = h * ratio;
     }

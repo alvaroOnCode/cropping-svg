@@ -40,7 +40,12 @@ import SVG from "svg.js";
 
 // Utils
 import { dog } from "./utils/elements";
-import { getExpandedSize, getLimits, getCropExpandAxis } from "./utils/crop-helpers";
+import {
+  getCropExpandAxis,
+  getExpandedSize,
+  getLimits,
+  getOffsets,
+} from "./utils/crop-helpers";
 
 export default {
   name: "App",
@@ -56,7 +61,8 @@ export default {
     target: [],
     rectHandler: null,
     cpRect: null,
-    xElem: null,
+    xTarget: null,
+    xGhost: null,
     modifiers: [],
     selectedModifier: {},
   }),
@@ -109,7 +115,12 @@ export default {
     const mirror = this.mirror;
     const svg = this.svg;
 
-    this.xElem = subjx(this.rectHandler.node).drag({
+    this.xTarget = subjx(this.rectHandler.node).drag({
+      snap: {
+        x: 1,
+        y: 1,
+      },
+
       onMove({ clientX, clientY, dx, dy, transform }) {
         // fires on moving
         targetHandler("onMove", { clientX, clientY, dx, dy, transform });
@@ -166,14 +177,17 @@ export default {
      */
     // Crop and Resize
     targetHandler(event, options) {
+      // Block target proportions on resizing
+      if (["onResize"].includes(event)) {
+        this.xTarget[0].options.proportions =
+          this.selectedModifier.mode === "vertex";
+      }
+
+      // Check if rectangle handler is getting out of target
       const limits = getLimits(this.target[0].node, this.rectHandler.node);
 
       this.target.forEach((target) => {
         if (["onResize", "onDrop"].includes(event)) {
-          // this.entry(
-          //   `${event} | ${this.selectedModifier.mode} | ${this.selectedModifier.name} | dx: ${options.dx} | dy: ${options.dy} | width: ${options.width} | height: ${options.height}`
-          // );
-
           // Get axis to move target when crop gets limits
           const axis = getCropExpandAxis(this.selectedModifier.name, limits);
 
@@ -208,10 +222,30 @@ export default {
 
           // Event onDrop
           if (["onDrop"].includes(event)) {
-            if (this.selectedModifier.mode === "vertex") {
-              const { a, d, e, f } = target.transform();
+            // Crop end
+            if (this.selectedModifier.mode === "edge") {
+              if (this.mode !== "Crop") {
+                // Relocate target on finish
+                if (limits.toLeft || limits.toRight) {
+                  target.x(this.rectHandler.x());
+                }
 
-              // Reset matrix
+                if (limits.toTop || limits.toBottom) {
+                  target.y(this.rectHandler.y());
+                }
+              }
+            }
+
+            // Resize end
+            if (this.selectedModifier.mode === "vertex") {
+              const { a, d } = target.transform();
+
+              const { offsetTop, offsetLeft } = getOffsets(
+                target.node,
+                this.rectHandler.node
+              );
+
+              // Reset target matrix
               target.transform({
                 a: 1,
                 d: 1,
@@ -219,28 +253,25 @@ export default {
                 f: 0,
               });
 
-              // Scale target
-              target.size(target.width() * a, target.height().d);
-            }
+              // Resize target
+              target.size(target.width() * a, target.height() * d);
 
-            if (this.mode !== "Crop") {
-              // Relocate target on finish
-              if (limits.toLeft || limits.toRight) {
-                target.attr({
-                  x: this.rectHandler.attr().x,
-                });
-              }
-
-              if (limits.toTop || limits.toBottom) {
-                target.attr({
-                  y: this.rectHandler.attr().y,
-                });
-              }
+              // Relocate target
+              target.x(
+                offsetLeft > 0
+                  ? this.rectHandler.x() - offsetLeft
+                  : this.rectHandler.x()
+              );
+              target.y(
+                offsetTop > 0
+                  ? this.rectHandler.y() - offsetTop
+                  : this.rectHandler.y()
+              );
             }
 
             // Set attributes for dragging delta
-            target.attr({ "data-x": target.attr().x });
-            target.attr({ "data-y": target.attr().y });
+            target.attr({ "data-x": target.x() });
+            target.attr({ "data-y": target.y() });
 
             // Reset info object on finish
             this.selectedModifier = {};
@@ -262,15 +293,7 @@ export default {
 
     // Move
     moveTarget(options, limits) {
-      const hasDistortion =
-        this.target[0].attr("data-distort-x") ||
-        this.target[0].attr("data-distort-y");
-
-      if (hasDistortion) {
-        this.moveDistortedTarget();
-      } else {
-        this.moveRawTarget(options, limits);
-      }
+      this.moveRawTarget(options, limits);
     },
 
     moveRawTarget(options, limits) {
@@ -287,33 +310,9 @@ export default {
       });
     },
 
-    moveDistortedTarget() {
-      // ⚠️ TODO
-    },
-
     // Expand
     expandTargetOnCrop(axis) {
-      const hasDistortion =
-        this.target[0].attr("data-distort-x") ||
-        this.target[0].attr("data-distort-y");
-
-      if (hasDistortion) {
-        this.expandDistortedTargetOnCrop();
-      } else {
-        this.expandRawTargetOnCrop(axis);
-      }
-    },
-
-    expandDistortedTargetOnCrop() {
-      // ⚠️ Fix
-      const { a, d, e, f } = this.rectHandler.transform();
-
-      this.target.forEach((target) => {
-        target.transform({
-          a: target.attr("data-distort-x") * a,
-          d: target.attr("data-distort-y") * d,
-        });
-      });
+      this.expandRawTargetOnCrop(axis);
     },
 
     expandRawTargetOnCrop(axis) {
@@ -365,7 +364,7 @@ export default {
       this.target.push(ghost);
 
       // ⚠️ Fix: subjx fails for some reason
-      subjx(ghost.node).drag({
+      this.xGhost = subjx(ghost.node).drag({
         onMove({ clientX, clientY, dx, dy, transform }) {
           // fires on moving
         },
@@ -381,6 +380,7 @@ export default {
     endGhostImage() {
       this.target[1].remove();
       this.target.pop();
+      this.xGhost[0].disable();
     },
 
     /**
