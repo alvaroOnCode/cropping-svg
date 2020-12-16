@@ -342,13 +342,7 @@ export default {
         this.cpRect.size(this.rectHandler.width(), this.rectHandler.height());
       }
 
-      if (event === "onResize") {
-        this.cpRect.attr({
-          transform: this.rectHandler.attr().transform,
-        });
-      }
-
-      if (["onMove"].includes(event)) {
+      if (["onMove", "onResize"].includes(event)) {
         this.cpRect.attr({
           transform: this.rectHandler.attr().transform,
         });
