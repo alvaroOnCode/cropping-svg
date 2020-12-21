@@ -70,17 +70,17 @@ HTML scheme is as follows:
 
 ### Pre-crop
 
-  - **Image => onMove**: `#image`, `#image-rect-handler` and `#clippath-rect`.
+  - Image => onMove: `#image`, `#image-rect-handler` and `#clippath-rect`.
 
-  - **Image => onResize**: `#image`, `#image-rect-handler` and `#clippath-rect`.
+  - Image => onResize: `#image`, `#image-rect-handler` and `#clippath-rect`.
 
 ### Crop mode:
   
-  - **Image => onResize**: `#image`, `#image-ghost`, `#image-rect-handler` and `#clippath-rect`.
+  - Image => onResize: `#image`, `#image-ghost`, `#image-rect-handler` and `#clippath-rect`.
 
-  - **Ghost => onMove**: `#image`, `#image-ghost` and `#ghost-rect-handler`.
+  - Ghost => onMove: `#image`, `#image-ghost` and `#ghost-rect-handler`.
 
-  - **Ghost => onResize**: `#image`, `#image-ghost` and `#ghost-rect-handler`.
+  - Ghost => onResize: `#image`, `#image-ghost` and `#ghost-rect-handler`.
 
 
 ## 🌍 Languages
