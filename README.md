@@ -6,7 +6,9 @@ SVG elements cropping using subjx and svg.js.
 
 ## ⚙️ How To
 
-ClipPath rectangle should have same size and position as image (or shape) subjx rectangle handler in order to manipulate the clip.
+Open project and run `yarn` and then `yarn dev`.
+
+## 📜 Scheme
 
 HTML scheme is as follows:
 
@@ -16,37 +18,47 @@ HTML scheme is as follows:
     <svg width="1280" height="720">
       <!-- Defs -->
       <defs>
-        <clipPath id="clippath">
+        <clipPath id="clippath-image">
           <rect id="clippath-rect" width="w1" height="h1" fill="white" />
+        </clipPath>
+
+        <clipPath id="clippath-shape">
+          ...
         </clipPath>
       </defs>
 
       <!-- Image -->
       <g id="content-image">
         <!-- Target -->
-        <image id="image" width="w2" height="h2" href="..." style="clip-path:url('#clippath')"></image>
+        <image id="image" width="w2" height="h2" href="..." style="clip-path:url('#clippath-image')"></image>
 
         <!-- Ghost (Only in crop mode) -->
         <image id="image-ghost" width="w2" height="h2" href="..." opacity="0.5"></image>
 
-        <!-- Handler -->
-        <rect id="image-rect-handler" width="w1" height="h1" fill="none" stroke="#ed1450" stroke-width="4px" class="sjx-drag" />
+        <!-- ClipPath Handler -->
+        <rect id="image-rect-handler" width="w1" height="h1" fill="none" stroke-width="4px" class="sjx-drag" />
+
+        <!-- Ghost Handler (Only in crop mode) -->
+        <rect id="ghost-rect-handler" width="w2" height="h2" fill="none" stroke-width="4px" class="sjx-drag" />
       </g>
 
-      <!-- or Shape -->
+      <!-- or Shape (Comming soon) -->
       <g id="content-shape">
-        <!-- Target -->
-        <g id="shape" style="clip-path:url('#clippath')">
+        <!-- Target | width: w4 and height: h4 -->
+        <g id="shape" style="clip-path:url('#clippath-shape')">
           <path>...</path>
         </g>
 
-        <!-- Ghost (Only in crop mode) -->
+        <!-- Ghost (Only in crop mode) | width: w4 and height: h4 -->
         <g id="shape-ghost" opacity="0.5">
           <path>...</path>
         </g>
 
-        <!-- Handler -->
-        <rect id="shape-rect-handler" width="w3" height="h3" fill="none" stroke="#ed1450" stroke-width="4px" class="sjx-drag" />
+        <!-- ClipPath Handler -->
+        <rect id="shape-rect-handler" width="w3" height="h3" fill="none" stroke-width="4px" class="sjx-drag" />
+
+        <!-- Ghost Handler (Only in crop mode) -->
+        <rect id="ghost-rect-handler" width="w4" height="h4" fill="none" stroke-width="4px" class="sjx-drag" />
       </g>
 
       <!-- subjx elements -->
@@ -56,7 +68,20 @@ HTML scheme is as follows:
 </body>
 ```
 
-Open project and run `yarn` and then `yarn dev`.
+### Pre-crop
+
+  - **Image => onMove**: `#image`, `#image-rect-handler` and `#clippath-rect`.
+
+  - **Image => onResize**: `#image`, `#image-rect-handler` and `#clippath-rect`.
+
+### Crop mode:
+  
+  - **Image => onResize**: `#image`, `#image-ghost`, `#image-rect-handler` and `#clippath-rect`.
+
+  - **Ghost => onMove**: `#image`, `#image-ghost` and `#ghost-rect-handler`.
+
+  - **Ghost => onResize**: `#image`, `#image-ghost` and `#ghost-rect-handler`.
+
 
 ## 🌍 Languages
 
