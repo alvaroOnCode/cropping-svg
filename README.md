@@ -98,4 +98,4 @@ HTML scheme is as follows:
 
 ## Credits
 
-Dog and food picture by [Freepik](https://www.freepik.es/)
+Dog and pictures by [Freepik](https://www.freepik.es/)
