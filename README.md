@@ -70,17 +70,17 @@ HTML scheme is as follows:
 
 #### Pre-crop
 
-  - Image => onMove: `#image`, `#image-rect-handler` and `#clippath-rect`.
+  - Image.onMove: `#image-rect-handler` => `#image` and `#clippath-rect`.
 
-  - Image => onResize: `#image`, `#image-rect-handler` and `#clippath-rect`.
+  - Image.onResize: `#image-rect-handler` => `#image` and `#clippath-rect`.
 
 #### Crop mode:
   
-  - Image => onResize: `#image`, `#image-ghost`, `#image-rect-handler` and `#clippath-rect`.
+  - Image.onResize: `#image-rect-handler` => `#image`, `#image-ghost` and `#clippath-rect`.
 
-  - Ghost => onMove (*): `#image`, `#image-ghost` and `#ghost-rect-handler`.
+  - Ghost.onMove (*): `#ghost-rect-handler` => `#image` and `#image-ghost`.
 
-  - Ghost => onResize (*): `#image`, `#image-ghost` and `#ghost-rect-handler`.
+  - Ghost.onResize (*): `#ghost-rect-handler` => `#image` and `#image-ghost`.
 
 (*) Events enabled under `#clippath-rect` restrictions: `width`, `height`, `pos-x` and `pos-y`.
 
