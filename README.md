@@ -78,9 +78,11 @@ HTML scheme is as follows:
   
   - Image => onResize: `#image`, `#image-ghost`, `#image-rect-handler` and `#clippath-rect`.
 
-  - Ghost => onMove: `#image`, `#image-ghost` and `#ghost-rect-handler`.
+  - Ghost => onMove (*): `#image`, `#image-ghost` and `#ghost-rect-handler`.
 
-  - Ghost => onResize: `#image`, `#image-ghost` and `#ghost-rect-handler`.
+  - Ghost => onResize (*): `#image`, `#image-ghost` and `#ghost-rect-handler`.
+
+(*) Events enabled under clip-path `width`, `height`, `pos-x` and `pos-y` restrictions.
 
 ## 🗺️ Roadmap
 
