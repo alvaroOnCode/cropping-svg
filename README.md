@@ -68,13 +68,13 @@ HTML scheme is as follows:
 </body>
 ```
 
-### Pre-crop
+#### Pre-crop
 
   - Image => onMove: `#image`, `#image-rect-handler` and `#clippath-rect`.
 
   - Image => onResize: `#image`, `#image-rect-handler` and `#clippath-rect`.
 
-### Crop mode:
+#### Crop mode:
   
   - Image => onResize: `#image`, `#image-ghost`, `#image-rect-handler` and `#clippath-rect`.
 
