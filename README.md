@@ -82,6 +82,11 @@ HTML scheme is as follows:
 
   - Ghost => onResize: `#image`, `#image-ghost` and `#ghost-rect-handler`.
 
+## 🗺️ Roadmap
+
+  - To mind flip.
+
+  - To mind rotation.
 
 ## 🌍 Languages
 
