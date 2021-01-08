@@ -105,4 +105,4 @@ HTML scheme is as follows:
 
 ## Credits
 
-Dog and pictures by [Freepik](https://www.freepik.es/)
+Dog SVG in `./src/utils/elements.js` and pictures by [Freepik](https://www.freepik.es/)

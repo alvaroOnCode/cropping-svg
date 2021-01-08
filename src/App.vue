@@ -204,7 +204,7 @@ export default {
           const axis = getCropExpandAxis(this.selectedModifier.name, limits);
 
           // Expand target if its visible area is smaller than subjx handler
-          if (this.selectedModifier.mode === "edge") {
+          if (axis && this.selectedModifier.mode === "edge") {
             this.expandTargetOnCrop(axis);
           }
 
@@ -329,8 +329,12 @@ export default {
 
     expandRawTargetOnCrop(axis) {
       this.target.forEach((target) => {
-        const { w, h } = getExpandedSize(target, this.rectHandler, axis);
-        target.size(w, h);
+        const { width, height } = getExpandedSize(
+          target,
+          this.rectHandler,
+          axis
+        );
+        target.size(width, height);
       });
     },
 
