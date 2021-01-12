@@ -1,19 +1,6 @@
 <template>
   <div id="app-container">
-    <!-- Debug -->
-    <div class="debugPanel">
-      <div class="debugPanel_topBar">
-        <span :class="{ active: active }" @click="active = !active"></span>
-
-        <button :class="{ 'crop-mode': mode === 'Crop' }" @click="switchMode">
-          {{ mode }}
-        </button>
-      </div>
-
-      <div class="debugPanel_logs" :class="{ active: active }">
-        <p v-for="(p, i) in outputHTML" :key="i" v-html="p"></p>
-      </div>
-    </div>
+    <ImageManager :svg="svg" />
   </div>
 </template>
 
@@ -48,6 +35,10 @@ const data = {
   "data-imagecropy": "0",
 };
 
+// Components
+import DebugPanel from "./components/DebugPanel.vue";
+import ImageManager from "./components/ImageManager.vue";
+
 // Packages
 import subjx from "subjx";
 import "subjx/dist/style/subjx.css";
@@ -66,114 +57,106 @@ import {
 export default {
   name: "App",
 
+  components: {
+    DebugPanel,
+    ImageManager,
+  },
+
   data: () => ({
     // DebugPanel
-    active: false,
-    outputHTML: [],
-    mode: "Pre-crop",
+    // debugEntry: "",
+    // debugStaticOutput: "",
+    // mode: "Pre-crop",
+
+    svg: {},
 
     // Crop
-    initSquareSize: 128,
-    target: [],
-    rectHandler: null,
-    cpRect: null,
-    xTarget: null,
-    xGhost: null,
-    modifiers: [],
-    selectedModifier: {},
+    // initSquareSize: 128,
+    // target: [],
+    // rectHandler: null,
+    // cpRect: null,
+    // xTarget: null,
+    // xGhost: null,
+    // modifiers: [],
+    // selectedModifier: {},
   }),
 
   created() {
     // Init svg.js
-    this.svg = SVG("app").size(960, 720);
+    this.svg = SVG("app").size(480, 360);
   },
 
   mounted() {
-    // Debug Panel
-    this.outputHTML.unshift("Debug...");
-
-    // Set clip path and its subjx-mirror rectangle
-    const clippath = this.svg.clip();
-    clippath.rect(IMAGE_SQUARE.w * 0.5, IMAGE_SQUARE.h * 0.5);
-    this.cpRect = clippath.select("rect").members[0];
-    this.cpRect.attr({
-      fill: "white",
-    });
-
-    // Set image
-    const image = this.svg.image(
-      IMAGE_SQUARE.url,
-      IMAGE_SQUARE.w * 0.5,
-      IMAGE_SQUARE.h * 0.5
-    );
-
-    // Set shape
-    // const shape = this.svg.group();
-    // shape.node.innerHTML = dog;
-
-    // Set subjx rectangle handler
-    this.rectHandler = this.svg.rect(
-      IMAGE_SQUARE.w * 0.5,
-      IMAGE_SQUARE.h * 0.5
-    );
-    this.rectHandler.attr({
-      fill: "none",
-      stroke: "#ed1450",
-      "stroke-width": "4px",
-    });
-
-    // Set a content group
-    const group = this.svg.group();
-
-    // Init subjx
-    const targetHandler = this.targetHandler;
-    const mirror = this.mirror;
-    const svg = this.svg;
-
-    this.xTarget = subjx(this.rectHandler.node).drag({
-      snap: {
-        x: 1,
-        y: 1,
-      },
-
-      onMove({ dx, dy }) {
-        // fires on moving
-        targetHandler("onMove", { dx, dy });
-        mirror("onMove");
-      },
-      onResize({ dx, dy }) {
-        // fires on resizing
-        targetHandler("onResize", { dx, dy });
-        mirror("onResize");
-      },
-      onDrop() {
-        // fires on drop
-        targetHandler("onDrop");
-        mirror("onDrop");
-      },
-    });
-
-    // Get subjx modifier nodes and add events to know which one is used
-    this.modifiers = Array.from(
-      document.querySelector(".sjx-svg-wrapper .sjx-svg-handles").childNodes
-    );
-
-    this.modifiers.forEach((m) => {
-      m.addEventListener("mousedown", this.setSelectedModifier);
-      m.addEventListener("mouseup", this.setSelectedModifier);
-    });
-
-    // Set ClipPath to image
-    image.attr({
-      style: `clip-path: url(#${clippath.id()}); pointer-events: none;`,
-    });
-
-    // Add nodes to group
-    group.add(image);
-    group.add(this.rectHandler);
-
-    // Set target array
-    this.target.push(image);
+    // // Set clip path and its subjx-mirror rectangle
+    // const clippath = this.svg.clip();
+    // clippath.rect(IMAGE_SQUARE.w * 0.5, IMAGE_SQUARE.h * 0.5);
+    // this.cpRect = clippath.select("rect").members[0];
+    // this.cpRect.attr({
+    //   fill: "white",
+    // });
+    // // Set image
+    // const image = this.svg.image(
+    //   IMAGE_SQUARE.url,
+    //   IMAGE_SQUARE.w * 0.5,
+    //   IMAGE_SQUARE.h * 0.5
+    // );
+    // // Set shape
+    // // const shape = this.svg.group();
+    // // shape.node.innerHTML = dog;
+    // // Set subjx rectangle handler
+    // this.rectHandler = this.svg.rect(
+    //   IMAGE_SQUARE.w * 0.5,
+    //   IMAGE_SQUARE.h * 0.5
+    // );
+    // this.rectHandler.attr({
+    //   fill: "none",
+    //   stroke: "#ed1450",
+    //   "stroke-width": "4px",
+    // });
+    // // Set a content group
+    // const group = this.svg.group();
+    // // Init subjx
+    // const targetHandler = this.targetHandler;
+    // const mirror = this.mirror;
+    // const svg = this.svg;
+    // this.xTarget = subjx(this.rectHandler.node).drag({
+    //   snap: {
+    //     x: 1,
+    //     y: 1,
+    //   },
+    //   onMove({ dx, dy }) {
+    //     // fires on moving
+    //     targetHandler("onMove", { dx, dy });
+    //     mirror("onMove");
+    //   },
+    //   onResize({ dx, dy }) {
+    //     // fires on resizing
+    //     targetHandler("onResize", { dx, dy });
+    //     mirror("onResize");
+    //   },
+    //   onDrop() {
+    //     // fires on drop
+    //     targetHandler("onDrop");
+    //     mirror("onDrop");
+    //   },
+    // });
+    // // Get subjx modifier nodes and add events to know which one is used
+    // this.modifiers = Array.from(
+    //   document.querySelector(".sjx-svg-wrapper .sjx-svg-handles").childNodes
+    // );
+    // this.modifiers.forEach((m) => {
+    //   m.addEventListener("mousedown", this.setSelectedModifier);
+    //   m.addEventListener("mouseup", this.setSelectedModifier);
+    // });
+    // // Set ClipPath to image
+    // image.attr({
+    //   style: `clip-path: url(#${clippath.id()}); pointer-events: none;`,
+    // });
+    // // Add nodes to group
+    // group.add(image);
+    // group.add(this.rectHandler);
+    // // Set target array
+    // this.target.push(image);
   },
 
   methods: {
@@ -437,94 +420,6 @@ svg {
   padding: 1rem;
   position: absolute;
   top: 50%;
-  transform: translate(-50%, -50%);
-}
-
-div#app-container {
-  div.debugPanel {
-    background-color: rgba(0, 0, 0, 0.65);
-    border-radius: 0.35rem;
-    box-shadow: 0 4px 1rem rgba(0, 0, 0, 0.35);
-    color: greenyellow;
-    height: 15vh;
-    left: 50%;
-    margin-top: 1rem;
-    min-height: 128px;
-    min-width: 640px;
-    padding: 0 0.5rem;
-    position: absolute;
-    text-align: initial;
-    top: 0;
-    transform: translateX(-50%);
-    width: 35vw;
-    z-index: 30;
-
-    & .debugPanel_topBar {
-      height: 2rem;
-      width: 100%;
-      position: relative;
-
-      & span {
-        background-color: red;
-        border-radius: 50%;
-        cursor: pointer;
-        height: 0.6rem;
-        left: 0.5rem;
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        transition: all 200ms;
-        width: 0.6rem;
-
-        &:hover {
-          box-shadow: 0 0 0.25rem red;
-        }
-
-        &.active {
-          background-color: greenyellow;
-
-          &:hover {
-            box-shadow: 0 0 0.35rem greenyellow;
-          }
-        }
-      }
-
-      & button {
-        background-color: cyan;
-        border: none;
-        border-radius: 16px;
-        color: rgba(0, 0, 0, 0.85);
-        cursor: pointer;
-        font-size: 0.65rem;
-        font-weight: bold;
-        left: 1.8rem;
-        outline: none;
-        padding: 0.25rem 0.65rem;
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-
-        &.crop-mode {
-          background-color: yellowgreen;
-        }
-      }
-    }
-
-    & .debugPanel_logs {
-      height: calc(100% - 2.5rem);
-      padding: 0 0.5rem;
-      pointer-events: none;
-      overflow-y: auto;
-
-      &.active {
-        pointer-events: initial;
-      }
-
-      & p {
-        font-size: 0.85rem;
-        margin-bottom: 0.35rem;
-      }
-    }
-  }
+  transform: translate(-50%, -50%) scale(2);
 }
 </style>
